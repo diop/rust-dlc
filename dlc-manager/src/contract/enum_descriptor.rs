@@ -41,9 +41,9 @@ impl EnumDescriptor {
         threshold: usize,
         outcomes: &[(usize, &Vec<String>)],
         adaptor_sig_start: usize,
-    ) -> Result<Option<(Vec<(usize, usize)>, RangeInfo)>, crate::error::Error> {
+    ) -> Option<(Vec<(usize, usize)>, RangeInfo)> {
         if outcomes.len() < threshold {
-            return Ok(None);
+            return None;
         }
 
         let filtered_outcomes: Vec<(usize, &Vec<String>)> = outcomes
@@ -55,7 +55,7 @@ impl EnumDescriptor {
         let outcome = outcome.remove(0);
 
         if actual_combination.len() < threshold {
-            return Ok(None);
+            return None;
         }
 
         actual_combination.truncate(threshold);
@@ -63,11 +63,7 @@ impl EnumDescriptor {
         let pos = self
             .outcome_payouts
             .iter()
-            .position(|x| x.outcome == outcome)
-            .ok_or(crate::error::Error::InvalidParameters(format!(
-                "Outcome {} not found in the set of possible outcomes",
-                outcome
-            )))?;
+            .position(|x| x.outcome == outcome)?;
 
         let combinator = CombinationIterator::new(nb_oracles, threshold);
         let mut comb_pos = 0;
@@ -85,10 +81,10 @@ impl EnumDescriptor {
             adaptor_index: comb_count * pos + comb_pos + adaptor_sig_start,
         };
 
-        Ok(Some((
+        Some((
             actual_combination.iter().map(|x| (*x, 1)).collect(),
             range_info,
-        )))
+        ))
     }
 
     /// Verify the given set adaptor signatures.
