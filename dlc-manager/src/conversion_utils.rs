@@ -13,21 +13,18 @@ use crate::payout_curve::{
 };
 use bitcoin::{consensus::encode::Decodable, OutPoint, Transaction};
 use dlc::{EnumerationPayout, PartyParams, Payout, TxInputInfo};
-use dlc_messages::oracle_msgs::{
-    MultiOracleInfo, OracleInfo as SerOracleInfo, OracleParams, SingleOracleInfo,
+use dlc_messages::contract_msgs::{
+    ContractDescriptor as SerContractDescriptor, ContractInfo as SerContractInfo,
+    ContractInfoInner, ContractOutcome, DisjointContractInfo, EnumeratedContractDescriptor,
+    HyperbolaPayoutCurvePiece as SerHyperbolaPayoutCurvePiece, NumericOutcomeContractDescriptor,
+    PayoutCurvePiece as SerPayoutCurvePiece, PayoutFunction as SerPayoutFunction,
+    PayoutFunctionPiece as SerPayoutFunctionPiece, PayoutPoint as SerPayoutPoint,
+    PolynomialPayoutCurvePiece as SerPolynomialPayoutCurvePiece,
+    RoundingInterval as SerRoundingInterval, RoundingIntervals as SerRoundingIntervals,
+    SingleContractInfo,
 };
-use dlc_messages::{
-    contract_msgs::{
-        ContractDescriptor as SerContractDescriptor, ContractInfo as SerContractInfo,
-        ContractInfoInner, ContractOutcome, DisjointContractInfo, EnumeratedContractDescriptor,
-        HyperbolaPayoutCurvePiece as SerHyperbolaPayoutCurvePiece,
-        NumericOutcomeContractDescriptor, PayoutCurvePiece as SerPayoutCurvePiece,
-        PayoutFunction as SerPayoutFunction, PayoutFunctionPiece as SerPayoutFunctionPiece,
-        PayoutPoint as SerPayoutPoint, PolynomialPayoutCurvePiece as SerPolynomialPayoutCurvePiece,
-        RoundingInterval as SerRoundingInterval, RoundingIntervals as SerRoundingIntervals,
-        SingleContractInfo,
-    },
-    oracle_msgs::EventDescriptor,
+use dlc_messages::oracle_msgs::{
+    EventDescriptor, MultiOracleInfo, OracleInfo as SerOracleInfo, OracleParams, SingleOracleInfo,
 };
 use dlc_messages::{
     AcceptDlc, CetAdaptorSignature, CetAdaptorSignatures, FundingInput, OfferDlc, SignDlc,
@@ -196,6 +193,16 @@ fn get_contract_info_and_announcements(offer_dlc: &OfferDlc) -> Result<Vec<Contr
                         multi.oracle_announcements
                     }
                 };
+
+                if announcements
+                    .iter()
+                    .any(|x| match &x.oracle_event.event_descriptor {
+                        EventDescriptor::EnumEvent(_) => false,
+                        EventDescriptor::DigitDecompositionEvent(_) => true,
+                    })
+                {
+                    return Err(Error::InvalidParameters);
+                }
 
                 (descriptor, announcements, threshold)
             }

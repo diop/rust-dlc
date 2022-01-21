@@ -38,6 +38,17 @@ impl ContractInfo {
         }
     }
 
+    /// Validate that the descriptor covers all possible outcomes that can be attested
+    /// by the oracle(s).
+    pub fn validate(&self) -> Result<(), Error> {
+        if self.oracle_announcements.is_empty() {
+            return Err(Error::InvalidState);
+        }
+
+        self.contract_descriptor
+            .validate(&self.oracle_announcements)
+    }
+
     /// Utility function returning a set of OracleInfo created using the set
     /// of oracle announcements defined for the contract.
     pub fn get_oracle_infos(&self) -> Vec<OracleInfo> {

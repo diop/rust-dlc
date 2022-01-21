@@ -1,11 +1,12 @@
 //! #EnumDescriptor
 
-use super::utils::get_majority_combination;
+use super::utils::{get_majority_combination, unordered_equal};
 use super::AdaptorInfo;
 use crate::error::Error;
 use bitcoin::{Script, Transaction};
 use dlc::OracleInfo;
 use dlc::{EnumerationPayout, Payout};
+use dlc_messages::oracle_msgs::EnumEventDescriptor;
 use dlc_trie::{combination_iterator::CombinationIterator, RangeInfo};
 use secp256k1_zkp::{
     All, EcdsaAdaptorSignature, Message, PublicKey, Secp256k1, SecretKey, Verification,
@@ -32,6 +33,25 @@ impl EnumDescriptor {
             .iter()
             .map(|x| x.payout.clone())
             .collect()
+    }
+
+    /// Validate that the descriptor covers all possible outcomes of the given
+    /// enum event descriptor.
+    pub fn validate(&self, enum_event_descriptor: &EnumEventDescriptor) -> Result<(), Error> {
+        if unordered_equal(
+            &enum_event_descriptor.outcomes.iter().collect::<Vec<_>>(),
+            &self
+                .outcome_payouts
+                .iter()
+                .map(|x| &x.outcome)
+                .collect::<Vec<_>>(),
+        ) {
+            Ok(())
+        } else {
+            Err(Error::InvalidParameters(format!(
+                "Oracle outcomes do not each have a single associated payout.",
+            )))
+        }
     }
 
     /// Returns the `RangeInfo` that matches the given set of outcomes if any.
