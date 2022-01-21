@@ -8,9 +8,12 @@ version = "0.1.0"
 cargo-fuzz = true
 
 [dependencies]
+dlc-manager = {path = "../dlc-manager", features = ["fuzztarget"]}
 dlc-messages = {path = "../dlc-messages"}
 honggfuzz = "0.5"
 lightning = {version = "0.0.103", features = ["fuzztarget"]}
+mocks = {path = "../mocks"}
+secp256k1-zkp = "0.5"
 
 [workspace]
 members = ["."]
